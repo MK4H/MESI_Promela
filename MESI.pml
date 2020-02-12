@@ -18,10 +18,14 @@
 #define FLUSH 4
 
 #define ADDRESS_TO_CACHE_LINE(a) (a & (CACHE_SIZE - 1))
-#define GET_STATE(t) (t & 3)
-#define SET_STATE(s,t) (t = ((t) & (~3)) | ((s) & 3))
-#define GET_TAG(t) (t >> 2)
-#define SET_TAG(a, t) ((t) = ((t) & 3) | (((a) & 63) << 2))
+#define GET_STATE(c, id, adr) (c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag & 3)
+#define SET_STATE(c, id, adr, st) (c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag = ((c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag) & (~3)) | ((st) & 3))
+
+#define GET_TAG(c, id, adr) (c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag >> 2)
+#define SET_TAG(c, id, adr) ((c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag) = ((c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag) & 3) | (((adr) & 63) << 2))
+
+#define GET_VALUE(c, id, adr) (c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].data)
+#define SET_VALUE(c, id, adr, val) ((c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].data) = (val))
 
 typedef cache_line {
     // bits 0 to 1 are used for cache line state
@@ -31,7 +35,7 @@ typedef cache_line {
 };
 
 typedef cache {
-    cache_line line[CACHE_SIZE];
+    cache_line lines[CACHE_SIZE];
 }
 
 chan bus_c = [0] of {byte, byte, byte, byte};
@@ -120,55 +124,72 @@ inline generate_request() {
     :: address = 2;
     :: address = 3;
     fi
-    cache_state = GET_STATE(cache[ADDRESS_TO_CACHE_LINE(address)].tag);
-    cache_tag = GET_TAG(cache[ADDRESS_TO_CACHE_LINE(address)].tag); 
+    cache_state = GET_STATE(caches, id, address);
+    cache_tag = GET_TAG(caches, id, address); 
 
     update_required_bus_op(); 
 }
 
 inline modify_cache() {
-    SET_STATE(MODIFIED, cache[ADDRESS_TO_CACHE_LINE(address)].tag);
-    cache[ADDRESS_TO_CACHE_LINE(address)].data = value;
+    SET_STATE(caches, id, address, MODIFIED);
+    SET_VALUE(caches, id, address, value);
 }
 
 inline read_from_cache() {
-    assert(cache[ADDRESS_TO_CACHE_LINE(address)].data == value);
+    assert(GET_VALUE(caches, id, address) == value);
 }
 
 inline update_cache_own_op() {
     if 
     :: bus_op == READ  ->
-        SET_STATE(SHARED, cache[ADDRESS_TO_CACHE_LINE(address)].tag);
-        cache[ADDRESS_TO_CACHE_LINE(address)].data = data;
+        SET_STATE(caches, id, address, SHARED);
+        SET_TAG(caches, id, address);
+        SET_VALUE(caches, id, address, data);
     :: bus_op == READX ->
-        SET_STATE(EXCLUSIVE, cache[ADDRESS_TO_CACHE_LINE(address)].tag);
-        cache[ADDRESS_TO_CACHE_LINE(address)].data = data;
-    :: bus_op == UPGRD -> SET_STATE(EXCLUSIVE, cache[ADDRESS_TO_CACHE_LINE(address)].tag);
-    :: bus_op == FLUSH -> SET_STATE(SHARED, cache[ADDRESS_TO_CACHE_LINE(address)].tag);
+        SET_STATE(caches, id, address, EXCLUSIVE);
+        SET_TAG(caches, id, address);
+        SET_VALUE(caches, id, address, data);
+    :: bus_op == UPGRD -> SET_STATE(caches, id, address, EXCLUSIVE);
+    :: bus_op == FLUSH -> SET_STATE(caches, id, address, SHARED);
     fi
 }
 
-inline update_cache_other_op() {
+inline update_cache_snooped_op() {
+    reply_op = NONE;
+    reply_adr = snp_address;
+    reply_data = 0;
+
     // If the address is stored in our cache
     if
-    :: GET_TAG(cache[ADDRESS_TO_CACHE_LINE(snp_address)].tag) == snp_address && snp_state != INVALID ->
-        if
-        :: snp_state == MODIFIED -> //FLUSH
+    :: GET_TAG(caches, id, snp_address) == snp_address && snp_state != INVALID ->
         
         assert(snp_bus_op != FLUSH); // FLUSH should never happen while we have the cache line in valid state
-
+        
         if
-        :: snp_bus_op == READ -> SET_STATE(SHARED, cache[ADDRESS_TO_CACHE_LINE(snp_address)].tag);
-        :: snp_bus_op == READX -> SET_STATE(INVALID, cache[ADDRESS_TO_CACHE_LINE(snp_address));
-        :: snp_bus_op == UPGRD -> SET_STATE(INVALID, cache[ADDRESS_TO_CACHE_LINE(snp_address));
+        :: snp_state == MODIFIED -> //FLUSH
+            reply_op = FLUSH;
+            reply_adr = snp_address;
+            reply_data = GET_VALUE(caches, id, snp_address);
+        fi
+        
+        if
+        :: snp_bus_op == READ -> SET_STATE(caches, id, snp_address, SHARED);
+        :: snp_bus_op == READX -> SET_STATE(caches, id, snp_address, INVALID);
+        :: snp_bus_op == UPGRD -> SET_STATE(caches, id, snp_address, INVALID);
         fi
     :: else -> skip;
     fi    
 }
 
-proctype cpu(byte id) {
-    cache_line cache[CACHE_SIZE];
+inline execute_in_cache() {
+    assert(bus_op == NONE);
+    if
+    :: read -> read_from_cache();
+    :: !read -> modify_cache();
+    fi   
+}
 
+proctype cpu(byte id) {
     //Read or write
     bool read;
     byte address;
@@ -181,29 +202,55 @@ proctype cpu(byte id) {
     do
         :: skip ->
             if 
-            :: bus_op != NONE && bus_c ! id, bus_op, address, data -> //DO THE COMMUNICATION
-                cpu_in ? bus_op, address, data;
-                update_cache_value();
+            :: bus_op != NONE && (bus_c ! id, bus_op, address, data) -> //DO THE COMMUNICATION
+                cpu_in[id] ? bus_op, address, data;
+                update_cache_own_op();
                 update_required_bus_op();
-                //TODO: Maybe execute the request
+                execute_in_cache();
             :: else ->
                 byte snp_bus_op;
                 byte snp_address;
                 byte snp_data;
                 byte snp_state;
                 if 
-                :: cpu_in ? snp_bus_op, snp_address, snp_data -> // snoop from the bus, change the request based on the updates
-                    snp_state = GET_STATE(cache[ADDRESS_TO_CACHE_LINE(address)].tag);
-                    update_cache_state();
+                :: cpu_in[id] ? snp_bus_op, snp_address, snp_data -> // snoop from the bus, change the request based on the updates
+                    byte reply_op;
+                    byte reply_adr;
+                    byte reply_data;
+                    snp_state = GET_STATE(cache, id, address);
+                    update_cache_snooped_op();
                     update_required_bus_op();
+                    cpu_out[id] ! reply_op, reply_adr, reply_data;
                 :: bus_op == NONE ->  // try execute request, do nothing if needs com
-                    if
-                    :: read -> read_from_cache();
-                    :: !read -> modify_cache();
-                    fi   
+                    execute_in_cache();
                     generate_request(); //Generate new request
                 :: else -> skip; //Try to acquire the bus and snoop some more 
                 fi 
             fi
     od
+}
+
+proctype cache_state_check() {
+    byte adr;
+    byte cpu_id;
+    d_step{
+        for (adr: 0 .. MEM_SIZE - 1) {
+            byte state_cnt[4];
+            byte value = mem[adr];
+            for (cpu_id: 0 .. NUM_CPU - 1) {
+
+                if
+                :: GET_TAG(caches, cpu_id, adr) == adr ->
+                    byte state = GET_STATE(caches, cpu_id, adr);
+                    state_cnt[state]++;
+                    // Cache line in shared or exclusive has to have the same data as main memory
+                    assert((state != SHARED && state != EXCLUSIVE) || line.data == value);
+                fi
+            }
+
+            assert(state_cnt[MODIFIED] <= 1);
+            assert(state_cnt[EXCLUSIVE] <= 1);
+            assert(state_cnt[SHARED] == 0 || (state_cnt[MODIFIED] == 0 && state_cnt[EXCLUSIVE] == 0));
+        }
+    }
 }
