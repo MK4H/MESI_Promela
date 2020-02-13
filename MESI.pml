@@ -35,7 +35,7 @@
 #define GET_VALUE(c, adr) (c.lines[ADDRESS_TO_CACHE_LINE(adr)].data)
 #define SET_VALUE(c, adr, val) c.lines[ADDRESS_TO_CACHE_LINE(adr)].data = (val)
 
-typedef cache_line {
+typedef cache_line_t {
     //// bits 0 to 1 are used for cache line state
     //// bits 2 to 7 are used for adress tag
     //byte tag;
@@ -45,28 +45,31 @@ typedef cache_line {
     byte data;
 };
 
-typedef cache {
-    cache_line lines[CACHE_SIZE];
+typedef cache_t {
+    cache_line_t lines[CACHE_SIZE];
 }
 
-typedef cpu_op {
+typedef cpu_op_t {
     bool read;
     byte address;
     byte value;
 }
 
-typedef bus_msg {
+typedef bus_msg_t {
     byte type;
     byte address;
-    byte data;
 }
 
-chan bus_c = [0] of {byte, bus_msg};
-chan cpu_in[NUM_CPU] = [0] of {bus_msg};
-chan cpu_out[NUM_CPU] = [0] of {bus_msg};
+typedef bus_t {
+    bool locked;
+    byte msg_type;
+    byte address;
+    bool snooped;
+}
 
 byte mem[MEM_SIZE];
-cache caches[NUM_CPU];
+cache_t caches[NUM_CPU];
+bus_t bus;
 
 
 
@@ -74,8 +77,6 @@ cache caches[NUM_CPU];
 inline update_required_bus_op() {
     // Apart from FLUSH, all messages will have the following settings
     req_msg.address = req.address;
-    // Apart from FLUSH, all messages IGNORE data when sending
-    req_msg.data = 0;
     
     // Bus operation needed based on the cache state and tag
     if 
@@ -84,7 +85,6 @@ inline update_required_bus_op() {
         :: GET_STATE(caches[id], req.address) == MODIFIED -> 
             req_msg.type = FLUSH;
             req_msg.address = GET_TAG(caches[id], req.address);
-            req_msg.data = GET_VALUE(caches[id], req.address);
         :: else -> 
             if 
             :: req.read -> req_msg.type = READ;
@@ -131,70 +131,43 @@ inline generate_request() {
 }
 
 inline modify_cache() {
-    SET_STATE(caches[id], req.address, MODIFIED);
-    SET_STATE(local_cache, req.address, MODIFIED);
-    SET_VALUE(caches[id], req.address, req.value);
+    atomic {
+        SET_STATE(caches[id], req.address, MODIFIED);
+        SET_VALUE(caches[id], req.address, req.value);
+    }
+    printf("CPU %d setting cache to %d by cache write", id, GET_STATE(caches[id], req_msg.address)); 
 }
 
 inline read_from_cache() {
     assert(GET_STATE(caches[id], req.address) == MODIFIED || GET_VALUE(caches[id], req.address) == mem[req.address]);
 }
 
-inline update_cache_own_op() {
+inline execute_bus_op() {
     if 
     :: req_msg.type == READ  ->
-        SET_STATE(caches[id], req_msg.address, SHARED);
-        SET_STATE(local_cache, req_msg.address, SHARED);
-        SET_TAG(caches[id], req_msg.address);
-        SET_TAG(local_cache, req_msg.address);
-        SET_VALUE(caches[id], req_msg.address, req_msg.data);
+        atomic {
+            SET_STATE(caches[id], req_msg.address, SHARED);
+            SET_TAG(caches[id], req_msg.address);
+            SET_VALUE(caches[id], req_msg.address, mem[req_msg.address]);
+        }
     :: req_msg.type == READX ->
+        atomic {
+            SET_STATE(caches[id], req_msg.address, EXCLUSIVE);
+            SET_TAG(caches[id], req_msg.address);
+            SET_VALUE(caches[id], req_msg.address, mem[req_msg.address]);
+        }
+    :: req_msg.type == UPGRD ->
         SET_STATE(caches[id], req_msg.address, EXCLUSIVE);
-        SET_STATE(local_cache, req_msg.address, EXCLUSIVE);
-        SET_TAG(caches[id], req_msg.address);
-        SET_TAG(local_cache, req_msg.address);
-        SET_VALUE(caches[id], req_msg.address, req_msg.data);
-    :: req_msg.type == UPGRD -> 
-        SET_STATE(caches[id], req_msg.address, EXCLUSIVE);
-        SET_STATE(local_cache, req_msg.address, EXCLUSIVE);
     :: req_msg.type == FLUSH -> 
-        SET_STATE(caches[id], req_msg.address, SHARED);
-        SET_STATE(local_cache, req_msg.address, SHARED);
+        printf("Writing value \"%d\" into mem[%d]\n", GET_VALUE(caches[id], bus.address), bus.address);
+        // Has to be atomic so that the following invariant is true:
+        // Cache in SHARED or EXCLUSIVE state has the same value as memory
+        atomic {
+            SET_STATE(caches[id], req_msg.address, SHARED);
+            mem[req_msg.address] = GET_VALUE(caches[id], req_msg.address);
+        }
     fi
-}
-
-inline update_cache_snooped_op() {
-    reply_msg.type = NONE;
-    reply_msg.address = snoop_msg.address;
-    reply_msg.data = snoop_msg.data;
-
-    // If the address is stored in our cache
-    if
-    :: GET_TAG(caches[id], snoop_msg.address) == snoop_msg.address && GET_STATE(caches[id], snoop_msg.address) != INVALID ->
-        
-        assert(snoop_msg.type != FLUSH); // FLUSH should never happen while we have the cache line in valid state
-        
-        if
-        :: GET_STATE(caches[id], snoop_msg.address) == MODIFIED -> //FLUSH
-            reply_msg.type = FLUSH;
-            reply_msg.address = snoop_msg.address;
-            reply_msg.data = GET_VALUE(caches[id], snoop_msg.address);
-        :: else -> skip;
-        fi
-        
-        if
-        :: snoop_msg.type == READ -> 
-            SET_STATE(caches[id], snoop_msg.address, SHARED);
-            SET_STATE(local_cache, snoop_msg.address, SHARED);
-        :: snoop_msg.type == READX -> 
-            SET_STATE(caches[id], snoop_msg.address, INVALID);
-            SET_STATE(local_cache, snoop_msg.address, INVALID);
-        :: snoop_msg.type == UPGRD -> 
-            SET_STATE(caches[id], snoop_msg.address, INVALID);
-            SET_STATE(local_cache, snoop_msg.address, INVALID);
-        fi
-    :: else -> skip;
-    fi    
+    printf("CPU %d setting cache to %d by bus op\n", id, GET_STATE(caches[id], req_msg.address)); 
 }
 
 inline execute_in_cache() {
@@ -211,23 +184,37 @@ inline execute_in_cache() {
 * Replies to the bus so that the other cpu can proceed.
 */
 inline snoop() {
-    update_cache_snooped_op();
+    // If the address is stored in our cache
+    if
+    :: GET_TAG(caches[id], bus.address) == bus.address && GET_STATE(caches[id], bus.address) != INVALID ->
+        
+        assert(bus.msg_type != FLUSH); // FLUSH should never happen while we have the cache line in valid state
+        
+        if
+        :: GET_STATE(caches[id], bus.address) == MODIFIED -> //FLUSH
+            printf("Writing value \"%d\" into mem[%d]\n", GET_VALUE(caches[id], bus.address), bus.address);
+            mem[bus.address] = GET_VALUE(caches[id], bus.address);
+        :: else -> skip;
+        fi
+        
+        if
+        :: bus.msg_type == READ -> SET_STATE(caches[id], bus.address, SHARED);
+        :: bus.msg_type == READX -> SET_STATE(caches[id], bus.address, INVALID);
+        :: bus.msg_type == UPGRD -> SET_STATE(caches[id], bus.address, INVALID);
+        fi
+        printf("CPU %d setting cache to %d by snooping\n", id, GET_STATE(caches[id], req_msg.address)); 
+    :: else -> skip;
+    fi
+
     update_required_bus_op();
-    cpu_out[id] ! reply_msg;
 }
 
 proctype cpu(byte id) {
-    //Read or write
-    cpu_op req;
-    cache local_cache;
 
-    bus_msg req_msg;
+    cpu_op_t req;
 
-    // Used when snooping on the bus
-    bus_msg snoop_msg;
+    bus_msg_t req_msg;
 
-    // Used when replying to the snooping on the bus
-    bus_msg reply_msg;
     generate_request();
 
     do
@@ -235,9 +222,10 @@ proctype cpu(byte id) {
         :: req_msg.type == NONE ->
             if 
             // Listening on the bus for other cpu communications
-            :: cpu_in[id] ? snoop_msg -> 
+            :: bus.locked && !bus.snooped -> 
                 // Change our request based on the updates and reply
                 snoop();
+                bus.snooped = true;
             :: req_msg.type == NONE ->  // try execute request, do nothing if needs com
                 execute_in_cache();
                 generate_request(); //Generate new request
@@ -246,97 +234,60 @@ proctype cpu(byte id) {
         :: req_msg.type != NONE ->
             if 
             // The communication on the bus to enable us to execute our action
-            :: bus_c ! id, req_msg -> 
-                // Models cpu setting address and type on the bus address and control lines
-                // and receiving data in the next cycle on the data lines
-                // For FLUSH message, even the data lines are set by cpu
-                cpu_in[id] ? req_msg;
-                update_cache_own_op();
+            :: atomic {
+                    !bus.locked;
+                    bus.locked = true;
+                    bus.msg_type = req_msg.type;
+                    bus.address = req_msg.address;
+                } 
+                bus.snooped;
+
+                execute_bus_op();
                 update_required_bus_op();
+                atomic {
+                    bus.snooped = false;
+                    bus.locked = false;
+                }
             // Listening on the bus for other cpu communications
-            :: cpu_in[id] ? snoop_msg ->
+            :: bus.locked && !bus.snooped;
                 // Change our request based on the updates and reply
                 snoop();
+                bus.snooped = true;
             fi
     od
 }
 
-active proctype bus() {
-    byte i;
-    byte cpu_id;
-    bus_msg req_msg;
-    bus_msg reply_msg;
-    do
-        ::bus_c ? cpu_id, req_msg -> 
-            assert(req_msg.type != NONE);
+/* active proctype cache_state_check() {
+    d_step{ 
+        byte adr;
+        byte cpu_id;
+        byte state_cnt[4]
+        for (adr: 0 .. MEM_SIZE - 1) {
+            state_cnt[0] = 0;
+            state_cnt[1] = 0;
+            state_cnt[2] = 0;
+            state_cnt[3] = 0;
+            for (cpu_id: 0 .. NUM_CPU - 1) {
 
-            for (i : 0 .. NUM_CPU - 1) {
-                if 
-                :: i != cpu_id 
-                    cpu_in[i] ! req_msg;
-                    // Has to be atomic so that we can check that on read from cache,
-                    // the cache contains the same value as memory
-                    atomic {
-                        cpu_out[i] ? reply_msg;
-                                    
-                        assert(reply_msg.type == NONE || reply_msg.type == FLUSH);
-                        assert(!(req_msg.type == FLUSH && reply_msg.type == FLUSH));
-                        assert(reply_msg.address == req_msg.address);
-
-                        if 
-                        :: reply_msg.type == NONE -> skip;
-                        :: reply_msg.type == FLUSH -> mem[reply_msg.address] = reply_msg.data; 
-                        fi
-                    }
-                    
+                if
+                :: GET_TAG(caches[cpu_id], adr) == adr ->
+                    state_cnt[GET_STATE(caches[cpu_id], adr)]++;
+                    // Cache line in shared or exclusive has to have the same data as main memory
+                    assert((GET_STATE(caches[cpu_id], adr) != SHARED && GET_STATE(caches[cpu_id], adr) != EXCLUSIVE) || 
+                            GET_VALUE(caches[cpu_id], adr) == mem[adr]);
                 :: else -> skip;
                 fi
             }
 
-            if 
-            :: req_msg.type == FLUSH -> mem[req_msg.address] = req_msg.data;
-            :: else -> skip;
-            fi
-            cpu_in[cpu_id] ! req_msg.type, req_msg.address, mem[req_msg.address]
-    od
-}
-
-active proctype cache_state_check() {
-    byte adr;
-    byte cpu_id;
-    byte state_cnt[4];
-    do
-    :: skip ->
-        d_step{
-            for (adr: 0 .. MEM_SIZE - 1) {
-                state_cnt[0] = 0;
-                state_cnt[1] = 0;
-                state_cnt[2] = 0;
-                state_cnt[3] = 0;
-                for (cpu_id: 0 .. NUM_CPU - 1) {
-
-                    if
-                    :: GET_TAG(caches[cpu_id], adr) == adr ->
-                        state_cnt[GET_STATE(caches[cpu_id], adr)]++;
-                        // Cache line in shared or exclusive has to have the same data as main memory
-                        assert((GET_STATE(caches[cpu_id], adr) != SHARED && GET_STATE(caches[cpu_id], adr) != EXCLUSIVE) || 
-                                GET_VALUE(caches[cpu_id], adr) == mem[adr]);
-                    :: else -> skip;
-                    fi
-                }
-
-                assert(state_cnt[MODIFIED] <= 1);
-                assert(state_cnt[EXCLUSIVE] <= 1);
-                assert(!(state_cnt[MODIFIED] > 0 && state_cnt[EXCLUSIVE] > 0));
-                assert(state_cnt[SHARED] == 0 || (state_cnt[MODIFIED] == 0 && state_cnt[EXCLUSIVE] == 0));
-            }
+            assert(state_cnt[MODIFIED] <= 1);
+            assert(state_cnt[EXCLUSIVE] <= 1);
+            assert(!(state_cnt[MODIFIED] > 0 && state_cnt[EXCLUSIVE] > 0));
+            assert(state_cnt[SHARED] == 0 || (state_cnt[MODIFIED] == 0 && state_cnt[EXCLUSIVE] == 0));
         }
-    od
-}
-
-init {
-    byte id;
-    for (id: 0 .. NUM_CPU - 1) {
-        run cpu(id);
     }
+}
+ */
+init {
+    run cpu(0);
+    run cpu(1);
 }
