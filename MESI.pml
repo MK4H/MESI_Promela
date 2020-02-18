@@ -19,61 +19,92 @@
 
 // Cannot have () around statements, promela does not like that
 
+// Gets the cache line into which the address a should be stored
 #define ADDRESS_TO_CACHE_LINE(a) (a & (CACHE_SIZE - 1))
-//#define GET_STATE(c, id, adr) (c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag & 3)
-//#define SET_STATE(c, id, adr, st) c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag = ((c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag) & (~3)) | ((st) & 3)
 
-//#define GET_TAG(c, id, adr) (c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag >> 2)
-//#define SET_TAG(c, id, adr) c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag = ((c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag) & 3) | (((adr) & 63) << 2)
+// Old definitions multiplexing tag and state into a single byte to reduce the state space
+// Fortunately it works without this
+//#define GET_STATE(c, adr) (c.lines[ADDRESS_TO_CACHE_LINE(adr)].tag & 3)
+//#define SET_STATE(c, adr, st) c.lines[ADDRESS_TO_CACHE_LINE(adr)].tag = ((c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag) & (~3)) | ((st) & 3)
 
+//#define GET_TAG(c, adr) (c.lines[ADDRESS_TO_CACHE_LINE(adr)].tag >> 2)
+//#define SET_TAG(c, adr) c.lines[ADDRESS_TO_CACHE_LINE(adr)].tag = ((c[id].lines[ADDRESS_TO_CACHE_LINE(adr)].tag) & 3) | (((adr) & 63) << 2)
+
+// Manipulates the state of the cache line (listed at line 8 to 11)
 #define GET_STATE(c, adr) (c.lines[ADDRESS_TO_CACHE_LINE(adr)].state)
 #define SET_STATE(c, adr, st) c.lines[ADDRESS_TO_CACHE_LINE(adr)].state = (st)
 
+// Manipulates the tag of the cache line, differentiating between different memory addresses colliding into single cache line
 #define GET_TAG(c, adr) (c.lines[ADDRESS_TO_CACHE_LINE(adr)].tag)
 #define SET_TAG(c, adr) c.lines[ADDRESS_TO_CACHE_LINE(adr)].tag = (adr)
 
+// Manipulates the value stored in the cache line
 #define GET_VALUE(c, adr) (c.lines[ADDRESS_TO_CACHE_LINE(adr)].data)
 #define SET_VALUE(c, adr, val) c.lines[ADDRESS_TO_CACHE_LINE(adr)].data = (val)
 
 typedef cache_line_t {
+    // For use with the old type of GET/SET_STATE and GET/SET_TAG macros, multiplexing the state and tag into a single byte
     //// bits 0 to 1 are used for cache line state
     //// bits 2 to 7 are used for adress tag
     //byte tag;
     
+    // Easier and more readable implementation, splitting the state and tag to different fields
     byte state;
     byte tag;
+
     byte data;
 };
 
+// Cache of a single CPU
 typedef cache_t {
     cache_line_t lines[CACHE_SIZE];
 }
 
+// The operation that the CPU wants to execute
 typedef cpu_op_t {
+    // true for read operation, false for write operation
     bool read;
     byte address;
+
+    //Ignored for read operations
     byte value;
 }
 
+// Message to be send or that was sent on the bus, snooped by other CPUs
 typedef bus_msg_t {
+    // Message types are listed at lines 14-18
     byte type;
     byte address;
 }
 
+// Cache<->Memory bus representation
 typedef bus_t {
+    // Used for locking the bus, where CPU gets exclusive write access to the bus
     bool locked;
+
+    //The type of the message and the address it is targeting
     byte msg_type;
     byte address;
+
+    // If the current message on the bus was snooped by the other CPU
+    // Should be rewritten to byte and different handling if we want more than 2 CPUs
     bool snooped;
 }
 
+// Main memory
 byte mem[MEM_SIZE];
+
+// CPU caches, made global to allow for verification
 cache_t caches[NUM_CPU];
+
+// Bus for Cache<->Memory communication
 bus_t bus;
 
 
 
-
+/** Decides the bus communication needed to execute the CPU request req
+* This decision is based on the current state of the CPUs cache and the request
+*/
 inline update_required_bus_op() {
     // Apart from FLUSH, all messages will have the following settings
     req_msg.address = req.address;
@@ -83,7 +114,6 @@ inline update_required_bus_op() {
     :: GET_TAG(caches[id], req.address) != req.address -> 
         if 
         :: GET_STATE(caches[id], req.address) == MODIFIED ->
-            printf("FLUSHING");
             req_msg.type = FLUSH;
             req_msg.address = GET_TAG(caches[id], req.address);
         :: else -> 
@@ -110,6 +140,8 @@ inline update_required_bus_op() {
     fi
 }
 
+/** Generates a random request of the CPU
+*/
 inline generate_request() {
     if 
     :: req.read = true;
@@ -131,6 +163,9 @@ inline generate_request() {
     update_required_bus_op(); 
 }
 
+/** Executes write request
+* Sets the correct cache state
+*/
 inline modify_cache() {
     atomic {
         SET_STATE(caches[id], req.address, MODIFIED);
@@ -139,10 +174,16 @@ inline modify_cache() {
     printf("CPU %d setting cache to %d by cache write", _pid, GET_STATE(caches[id], req_msg.address)); 
 }
 
+/** Executes read request
+*/
 inline read_from_cache() {
+    // Checks the validity of the value held in cache against the value in memory
+    // The cache should hold the same value as is in main memory unless it is modified
     assert(GET_STATE(caches[id], req.address) == MODIFIED || GET_VALUE(caches[id], req.address) == mem[req.address]);
 }
 
+/** Executes the bus operation, changing cache state accordingly
+*/
 inline execute_bus_op() {
     if 
     :: req_msg.type == READ  ->
@@ -171,6 +212,9 @@ inline execute_bus_op() {
     printf("CPU %d setting cache to %d by bus op\n", _pid, GET_STATE(caches[id], req_msg.address)); 
 }
 
+/** Executes the CPU operation in cache
+* Checks that the operation is executable using the cache only
+*/
 inline execute_in_cache() {
     assert(req_msg.type == NONE);
 progress:
@@ -211,10 +255,13 @@ inline snoop() {
     update_required_bus_op();
 }
 
+/** Proctype representing a CPU
+*/
 proctype cpu(byte id) {
-
+    // Read or write request of the CPU
     cpu_op_t req;
 
+    // Bus communication needed to execute the CPU request
     bus_msg_t req_msg;
 
     generate_request();
@@ -224,7 +271,8 @@ proctype cpu(byte id) {
         :: req_msg.type == NONE ->
             //Execute the operation while we can
             execute_in_cache();
-            generate_request(); //Generate new request
+            //Generate new request
+            generate_request(); 
             if 
             // Listening on the bus for other cpu communications
             :: bus.locked && !bus.snooped -> 
@@ -244,7 +292,7 @@ proctype cpu(byte id) {
                     bus.address = req_msg.address;
                 } 
                 bus.snooped;
-
+                // Execute the operation presented on the bus, changing the cache state
                 execute_bus_op();
                 update_required_bus_op();
                 atomic {
@@ -269,6 +317,8 @@ init {
     }
 }
 
+// Proctype check of the validity, could not validate with this due to the size of the automaton
+// Superseded by the LTL formulae below
 /* active proctype cache_state_check() {
     d_step{ 
         byte adr;
@@ -316,16 +366,18 @@ init {
 #define mem_at_cpu0_cache (mem[caches[0].lines[0].tag])
 #define mem_at_cpu1_cache (mem[caches[1].lines[0].tag])
 
+// Checks that only a single cache will have the cache line when it is in MODIFIED state
 ltl single_modified { [] ((cpu0ctag != cpu1ctag) || 
                             (((cpu0cstate == MODIFIED) -> (cpu1cstate == INVALID)) && 
                             ((cpu1cstate == MODIFIED) -> (cpu0cstate == INVALID)))) }
 
 
+// Checks that only a single cache will have the cache line when it is in EXCLUSIVE state
 ltl single_exclusive { [] ((cpu0ctag != cpu1ctag) || 
                             (((cpu0cstate == EXCLUSIVE) -> (cpu1cstate == INVALID)) && 
                             ((cpu1cstate == EXCLUSIVE) -> (cpu0cstate == INVALID)))) }
 
-
+// Checks that the value in the SHARED or EXCLUSIVE cache is the same as in the main memory
 ltl sh_ex_mem_value { [] ((((cpu0cstate == SHARED) || (cpu0cstate == EXCLUSIVE)) ->
                             (cpu0cval == mem_at_cpu0_cache)) &&
                           (((cpu1cstate == SHARED) || (cpu1cstate == EXCLUSIVE)) ->
