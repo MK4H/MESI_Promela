@@ -68,7 +68,7 @@ typedef bus_t {
 }
 
 byte mem[MEM_SIZE];
-//cache_t caches[NUM_CPU];
+cache_t caches[NUM_CPU];
 bus_t bus;
 
 
@@ -80,32 +80,32 @@ inline update_required_bus_op() {
     
     // Bus operation needed based on the cache state and tag
     if 
-    :: GET_TAG(cache, req.address) != req.address -> 
+    :: GET_TAG(caches[id], req.address) != req.address -> 
         if 
-        :: GET_STATE(cache, req.address) == MODIFIED ->
+        :: GET_STATE(caches[id], req.address) == MODIFIED ->
             printf("FLUSHING");
             req_msg.type = FLUSH;
-            req_msg.address = GET_TAG(cache, req.address);
+            req_msg.address = GET_TAG(caches[id], req.address);
         :: else -> 
             if 
             :: req.read -> req_msg.type = READ;
             :: !req.read -> req_msg.type = READX;
             fi
         fi
-    :: GET_TAG(cache, req.address) == req.address ->
+    :: GET_TAG(caches[id], req.address) == req.address ->
         if 
-        :: GET_STATE(cache, req.address) == INVALID -> 
+        :: GET_STATE(caches[id], req.address) == INVALID -> 
             if 
             :: req.read -> req_msg.type = READ;
             :: !req.read -> req_msg.type = READX;
             fi
-        :: GET_STATE(cache, req.address) == SHARED -> 
+        :: GET_STATE(caches[id], req.address) == SHARED -> 
             if
             :: req.read -> req_msg.type = NONE;
             :: !req.read -> req_msg.type = UPGRD;
             fi 
-        :: GET_STATE(cache, req.address) == EXCLUSIVE -> req_msg.type = NONE;
-        :: GET_STATE(cache, req.address) == MODIFIED -> req_msg.type = NONE;
+        :: GET_STATE(caches[id], req.address) == EXCLUSIVE -> req_msg.type = NONE;
+        :: GET_STATE(caches[id], req.address) == MODIFIED -> req_msg.type = NONE;
         fi
     fi
 }
@@ -133,51 +133,51 @@ inline generate_request() {
 
 inline modify_cache() {
     atomic {
-        SET_STATE(cache, req.address, MODIFIED);
-        SET_VALUE(cache, req.address, req.value);
+        SET_STATE(caches[id], req.address, MODIFIED);
+        SET_VALUE(caches[id], req.address, req.value);
     }
-    printf("CPU %d setting cache to %d by cache write", _pid, GET_STATE(cache, req_msg.address)); 
+    printf("CPU %d setting cache to %d by cache write", _pid, GET_STATE(caches[id], req_msg.address)); 
 }
 
 inline read_from_cache() {
-    assert(GET_STATE(cache, req.address) == MODIFIED || GET_VALUE(cache, req.address) == mem[req.address]);
+    assert(GET_STATE(caches[id], req.address) == MODIFIED || GET_VALUE(caches[id], req.address) == mem[req.address]);
 }
 
 inline execute_bus_op() {
     if 
     :: req_msg.type == READ  ->
         atomic {
-            SET_STATE(cache, req_msg.address, SHARED);
-            SET_TAG(cache, req_msg.address);
-            SET_VALUE(cache, req_msg.address, mem[req_msg.address]);
+            SET_STATE(caches[id], req_msg.address, SHARED);
+            SET_TAG(caches[id], req_msg.address);
+            SET_VALUE(caches[id], req_msg.address, mem[req_msg.address]);
         }
     :: req_msg.type == READX ->
         atomic {
-            SET_STATE(cache, req_msg.address, EXCLUSIVE);
-            SET_TAG(cache, req_msg.address);
-            SET_VALUE(cache, req_msg.address, mem[req_msg.address]);
+            SET_STATE(caches[id], req_msg.address, EXCLUSIVE);
+            SET_TAG(caches[id], req_msg.address);
+            SET_VALUE(caches[id], req_msg.address, mem[req_msg.address]);
         }
     :: req_msg.type == UPGRD ->
-        SET_STATE(cache, req_msg.address, EXCLUSIVE);
+        SET_STATE(caches[id], req_msg.address, EXCLUSIVE);
     :: req_msg.type == FLUSH -> 
-        printf("Writing value \"%d\" into mem[%d]\n", GET_VALUE(cache, bus.address), bus.address);
+        printf("Writing value \"%d\" into mem[%d]\n", GET_VALUE(caches[id], bus.address), bus.address);
         // Has to be atomic so that the following invariant is true:
         // Cache in SHARED or EXCLUSIVE state has the same value as memory
         atomic {
-            SET_STATE(cache, req_msg.address, SHARED);
-            mem[req_msg.address] = GET_VALUE(cache, req_msg.address);
+            SET_STATE(caches[id], req_msg.address, SHARED);
+            mem[req_msg.address] = GET_VALUE(caches[id], req_msg.address);
         }
     fi
-    printf("CPU %d setting cache to %d by bus op\n", _pid, GET_STATE(cache, req_msg.address)); 
+    printf("CPU %d setting cache to %d by bus op\n", _pid, GET_STATE(caches[id], req_msg.address)); 
 }
 
 inline execute_in_cache() {
     assert(req_msg.type == NONE);
+progress:
     if
     :: req.read -> read_from_cache();
     :: !req.read -> modify_cache();
     fi   
-    id++;
 }
 
 /*
@@ -188,32 +188,30 @@ inline execute_in_cache() {
 inline snoop() {
     // If the address is stored in our cache
     if
-    :: GET_TAG(cache, bus.address) == bus.address && GET_STATE(cache, bus.address) != INVALID ->
+    :: GET_TAG(caches[id], bus.address) == bus.address && GET_STATE(caches[id], bus.address) != INVALID ->
         
         assert(bus.msg_type != FLUSH); // FLUSH should never happen while we have the cache line in valid state
         
         if
-        :: GET_STATE(cache, bus.address) == MODIFIED -> //FLUSH
-            printf("Writing value \"%d\" into mem[%d]\n", GET_VALUE(cache, bus.address), bus.address);
-            mem[bus.address] = GET_VALUE(cache, bus.address);
+        :: GET_STATE(caches[id], bus.address) == MODIFIED -> //FLUSH
+            printf("Writing value \"%d\" into mem[%d]\n", GET_VALUE(caches[id], bus.address), bus.address);
+            mem[bus.address] = GET_VALUE(caches[id], bus.address);
         :: else -> skip;
         fi
         
         if
-        :: bus.msg_type == READ -> SET_STATE(cache, bus.address, SHARED);
-        :: bus.msg_type == READX -> SET_STATE(cache, bus.address, INVALID);
-        :: bus.msg_type == UPGRD -> SET_STATE(cache, bus.address, INVALID);
+        :: bus.msg_type == READ -> SET_STATE(caches[id], bus.address, SHARED);
+        :: bus.msg_type == READX -> SET_STATE(caches[id], bus.address, INVALID);
+        :: bus.msg_type == UPGRD -> SET_STATE(caches[id], bus.address, INVALID);
         fi
-        printf("CPU %d setting cache to %d by snooping\n", _pid, GET_STATE(cache, req_msg.address)); 
+        printf("CPU %d setting cache to %d by snooping\n", _pid, GET_STATE(caches[id], req_msg.address)); 
     :: else -> skip;
     fi
 
     update_required_bus_op();
 }
 
-active [2] proctype cpu() {
-    byte id;
-    cache_t cache;
+proctype cpu(byte id) {
 
     cpu_op_t req;
 
@@ -224,15 +222,16 @@ active [2] proctype cpu() {
     do
         // Can execute the action using cache
         :: req_msg.type == NONE ->
+            //Execute the operation while we can
+            execute_in_cache();
+            generate_request(); //Generate new request
             if 
             // Listening on the bus for other cpu communications
             :: bus.locked && !bus.snooped -> 
                 // Change our request based on the updates and reply
                 snoop();
                 bus.snooped = true;
-            :: req_msg.type == NONE ->  // try execute request, do nothing if needs com
-                execute_in_cache();
-                generate_request(); //Generate new request
+            :: else -> skip;
             fi    
         // We have to communicate to change the cache state, so that we can execute the action
         :: req_msg.type != NONE ->
@@ -253,12 +252,21 @@ active [2] proctype cpu() {
                     bus.locked = false;
                 }
             // Listening on the bus for other cpu communications
+            // If we already snooped, byt the bus is still locked, we will block here, because there is nothing we can do
             :: bus.locked && !bus.snooped;
                 // Change our request based on the updates and reply
                 snoop();
                 bus.snooped = true;
             fi
     od
+}
+
+
+init {
+    atomic {
+        run cpu(0);
+        run cpu(1);
+    }
 }
 
 /* active proctype cache_state_check() {
@@ -292,21 +300,23 @@ active [2] proctype cpu() {
 }
  */
 
-#define cpu0ctag ((cpu[0]:cache).lines[0].tag)
-#define cpu1ctag ((cpu[1]:cache).lines[0].tag)
+// References to local variables do not work at all with member access
+// Additionally, they do not work with partial order reduction during verification
+// ltl test { [] ((cpu[0]:req).read == false) }
 
-#define cpu0cstate ((cpu[0]:cache).lines[0].state)
-#define cpu1cstate ((cpu[1]:cache).lines[0].state)
+#define cpu0ctag (caches[0].lines[0].tag)
+#define cpu1ctag (caches[1].lines[0].tag)
 
-#define cpu0cval ((cpu[0]:cache).lines[0].data)
-#define cpu1cval ((cpu[1]:cache).lines[0].data)
+#define cpu0cstate (caches[0].lines[0].state)
+#define cpu1cstate (caches[1].lines[0].state)
 
-#define mem_at_cpu0_cache (mem[cpu[0]:cache.lines[0].tag])
-#define mem_at_cpu1_cache (mem[cpu[1]:cache.lines[0].tag])
+#define cpu0cval (caches[0].lines[0].data)
+#define cpu1cval (caches[1].lines[0].data)
 
-ltl test { [] ((cpu[0]:req).read == false) }
+#define mem_at_cpu0_cache (mem[caches[0].lines[0].tag])
+#define mem_at_cpu1_cache (mem[caches[1].lines[0].tag])
 
-/* ltl single_modified { [] ((cpu0ctag != cpu1ctag) || 
+ltl single_modified { [] ((cpu0ctag != cpu1ctag) || 
                             (((cpu0cstate == MODIFIED) -> (cpu1cstate == INVALID)) && 
                             ((cpu1cstate == MODIFIED) -> (cpu0cstate == INVALID)))) }
 
@@ -319,4 +329,4 @@ ltl single_exclusive { [] ((cpu0ctag != cpu1ctag) ||
 ltl sh_ex_mem_value { [] ((((cpu0cstate == SHARED) || (cpu0cstate == EXCLUSIVE)) ->
                             (cpu0cval == mem_at_cpu0_cache)) &&
                           (((cpu1cstate == SHARED) || (cpu1cstate == EXCLUSIVE)) ->
-                            (cpu1cval == mem_at_cpu1_cache))) } */
+                            (cpu1cval == mem_at_cpu1_cache))) }

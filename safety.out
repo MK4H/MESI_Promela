@@ -1,0 +1,306 @@
+ltl single_modified: [] (((caches[0].lines[0].tag!=caches[1].lines[0].tag)) || (((! ((caches[0].lines[0].state==3))) || ((caches[1].lines[0].state==0))) && ((! ((caches[1].lines[0].state==3))) || ((caches[0].lines[0].state==0)))))
+ltl single_exclusive: [] (((caches[0].lines[0].tag!=caches[1].lines[0].tag)) || (((! ((caches[0].lines[0].state==2))) || ((caches[1].lines[0].state==0))) && ((! ((caches[1].lines[0].state==2))) || ((caches[0].lines[0].state==0)))))
+ltl sh_ex_mem_value: [] (((! (((caches[0].lines[0].state==1)) || ((caches[0].lines[0].state==2)))) || ((caches[0].lines[0].data==mem[caches[0].lines[0].tag]))) && ((! (((caches[1].lines[0].state==1)) || ((caches[1].lines[0].state==2)))) || ((caches[1].lines[0].data==mem[caches[1].lines[0].tag]))))
+  the model contains 3 never claims: sh_ex_mem_value, single_exclusive, single_modified
+  only one claim is used in a verification run
+  choose which one with ./pan -a -N name (defaults to -N single_modified)
+  or use e.g.: spin -search -ltl single_modified MESI.pml
+Depth=  537179 States=    1e+06 Transitions= 1.22e+06 Memory=  1769.919	t=     0.37 R=   3e+06
+Depth=  909158 States=    2e+06 Transitions= 2.47e+06 Memory=  1809.275	t=     0.77 R=   3e+06
+Depth= 1209839 States=    3e+06 Transitions= 3.76e+06 Memory=  1848.142	t=      1.2 R=   2e+06
+Depth= 1461942 States=    4e+06 Transitions= 5.07e+06 Memory=  1887.009	t=     1.64 R=   2e+06
+Depth= 1703804 States=    5e+06 Transitions= 6.39e+06 Memory=  1925.778	t=      2.1 R=   2e+06
+Depth= 1958623 States=    6e+06 Transitions=  7.7e+06 Memory=  1964.548	t=     2.57 R=   2e+06
+Depth= 2222957 States=    7e+06 Transitions= 9.01e+06 Memory=  2003.318	t=     3.06 R=   2e+06
+Depth= 2473838 States=    8e+06 Transitions= 1.03e+07 Memory=  2041.989	t=     3.57 R=   2e+06
+Depth= 2750744 States=    9e+06 Transitions= 1.16e+07 Memory=  2080.759	t=     4.08 R=   2e+06
+Depth= 2989090 States=    1e+07 Transitions= 1.29e+07 Memory=  2119.431	t=      4.6 R=   2e+06
+Depth= 3188722 States=  1.1e+07 Transitions= 1.43e+07 Memory=  2158.005	t=     5.12 R=   2e+06
+Depth= 3390908 States=  1.2e+07 Transitions= 1.56e+07 Memory=  2196.579	t=     5.66 R=   2e+06
+Depth= 3593304 States=  1.3e+07 Transitions= 1.69e+07 Memory=  2235.251	t=     6.21 R=   2e+06
+Depth= 3772339 States=  1.4e+07 Transitions= 1.82e+07 Memory=  2273.728	t=     6.76 R=   2e+06
+Depth= 3942469 States=  1.5e+07 Transitions= 1.96e+07 Memory=  2312.302	t=     7.32 R=   2e+06
+Depth= 4090194 States=  1.6e+07 Transitions= 2.09e+07 Memory=  2350.681	t=     7.89 R=   2e+06
+Depth= 4245573 States=  1.7e+07 Transitions= 2.23e+07 Memory=  2389.157	t=     8.47 R=   2e+06
+Depth= 4404351 States=  1.8e+07 Transitions= 2.36e+07 Memory=  2427.634	t=     9.06 R=   2e+06
+Depth= 4547035 States=  1.9e+07 Transitions=  2.5e+07 Memory=  2466.111	t=     9.66 R=   2e+06
+Depth= 4690691 States=    2e+07 Transitions= 2.63e+07 Memory=  2504.489	t=     10.3 R=   2e+06
+Depth= 4824766 States=  2.1e+07 Transitions= 2.77e+07 Memory=  2542.966	t=     10.9 R=   2e+06
+Depth= 4965553 States=  2.2e+07 Transitions=  2.9e+07 Memory=  2581.345	t=     11.5 R=   2e+06
+Depth= 5109094 States=  2.3e+07 Transitions= 3.04e+07 Memory=  2619.724	t=     12.2 R=   2e+06
+Depth= 5230048 States=  2.4e+07 Transitions= 3.17e+07 Memory=  2658.103	t=     12.8 R=   2e+06
+Depth= 5354509 States=  2.5e+07 Transitions= 3.31e+07 Memory=  2696.482	t=     13.5 R=   2e+06
+Depth= 5477852 States=  2.6e+07 Transitions= 3.44e+07 Memory=  2734.958	t=     14.1 R=   2e+06
+Depth= 5608292 States=  2.7e+07 Transitions= 3.58e+07 Memory=  2773.337	t=     14.8 R=   2e+06
+Depth= 5740373 States=  2.8e+07 Transitions= 3.72e+07 Memory=  2811.716	t=     15.5 R=   2e+06
+Depth= 5864589 States=  2.9e+07 Transitions= 3.85e+07 Memory=  2850.095	t=     16.2 R=   2e+06
+Depth= 6001434 States=    3e+07 Transitions= 3.99e+07 Memory=  2888.474	t=     16.9 R=   2e+06
+Depth= 6138708 States=  3.1e+07 Transitions= 4.13e+07 Memory=  2926.853	t=     17.6 R=   2e+06
+Depth= 6264456 States=  3.2e+07 Transitions= 4.27e+07 Memory=  2965.232	t=     18.3 R=   2e+06
+Depth= 6389386 States=  3.3e+07 Transitions=  4.4e+07 Memory=  3003.513	t=     19.1 R=   2e+06
+Depth= 6527805 States=  3.4e+07 Transitions= 4.54e+07 Memory=  3041.892	t=     19.8 R=   2e+06
+pan: resizing hashtable to -w26..  done
+Depth= 6664227 States=  3.5e+07 Transitions= 4.68e+07 Memory=  3576.353	t=     24.1 R=   1e+06
+Depth= 6810159 States=  3.6e+07 Transitions= 4.81e+07 Memory=  3614.732	t=     24.6 R=   1e+06
+Depth= 6950441 States=  3.7e+07 Transitions= 4.95e+07 Memory=  3653.111	t=     25.2 R=   1e+06
+Depth= 7073612 States=  3.8e+07 Transitions= 5.09e+07 Memory=  3691.489	t=     25.7 R=   1e+06
+Depth= 7187516 States=  3.9e+07 Transitions= 5.23e+07 Memory=  3729.771	t=     26.2 R=   1e+06
+Depth= 7304609 States=    4e+07 Transitions= 5.37e+07 Memory=  3768.150	t=     26.8 R=   1e+06
+Depth= 7424171 States=  4.1e+07 Transitions= 5.51e+07 Memory=  3806.528	t=     27.4 R=   1e+06
+Depth= 7546257 States=  4.2e+07 Transitions= 5.65e+07 Memory=  3844.810	t=     27.9 R=   2e+06
+Depth= 7641032 States=  4.3e+07 Transitions= 5.79e+07 Memory=  3883.189	t=     28.5 R=   2e+06
+Depth= 7748669 States=  4.4e+07 Transitions= 5.93e+07 Memory=  3921.470	t=     29.1 R=   2e+06
+Depth= 7853496 States=  4.5e+07 Transitions= 6.07e+07 Memory=  3959.751	t=     29.7 R=   2e+06
+Depth= 7960336 States=  4.6e+07 Transitions= 6.21e+07 Memory=  3998.130	t=     30.2 R=   2e+06
+Depth= 8059161 States=  4.7e+07 Transitions= 6.35e+07 Memory=  4036.411	t=     30.8 R=   2e+06
+Depth= 8158643 States=  4.8e+07 Transitions= 6.49e+07 Memory=  4074.693	t=     31.4 R=   2e+06
+Depth= 8249469 States=  4.9e+07 Transitions= 6.63e+07 Memory=  4113.071	t=       32 R=   2e+06
+Depth= 8346116 States=    5e+07 Transitions= 6.77e+07 Memory=  4151.353	t=     32.6 R=   2e+06
+Depth= 8439155 States=  5.1e+07 Transitions= 6.92e+07 Memory=  4189.634	t=     33.2 R=   2e+06
+Depth= 8535523 States=  5.2e+07 Transitions= 7.06e+07 Memory=  4227.915	t=     33.8 R=   2e+06
+Depth= 8627729 States=  5.3e+07 Transitions=  7.2e+07 Memory=  4266.196	t=     34.4 R=   2e+06
+Depth= 8721520 States=  5.4e+07 Transitions= 7.35e+07 Memory=  4304.478	t=       35 R=   2e+06
+Depth= 8831921 States=  5.5e+07 Transitions= 7.49e+07 Memory=  4342.857	t=     35.6 R=   2e+06
+Depth= 8917000 States=  5.6e+07 Transitions= 7.63e+07 Memory=  4381.138	t=     36.2 R=   2e+06
+Depth= 8998967 States=  5.7e+07 Transitions= 7.78e+07 Memory=  4419.321	t=     36.9 R=   2e+06
+Depth= 9107514 States=  5.8e+07 Transitions= 7.92e+07 Memory=  4457.700	t=     37.5 R=   2e+06
+Depth= 9178182 States=  5.9e+07 Transitions= 8.07e+07 Memory=  4495.884	t=     38.1 R=   2e+06
+Depth= 9248626 States=    6e+07 Transitions= 8.21e+07 Memory=  4534.165	t=     38.8 R=   2e+06
+Depth= 9334513 States=  6.1e+07 Transitions= 8.36e+07 Memory=  4572.446	t=     39.4 R=   2e+06
+Depth= 9395985 States=  6.2e+07 Transitions= 8.51e+07 Memory=  4610.630	t=       40 R=   2e+06
+Depth= 9466476 States=  6.3e+07 Transitions= 8.65e+07 Memory=  4648.911	t=     40.7 R=   2e+06
+Depth= 9547176 States=  6.4e+07 Transitions=  8.8e+07 Memory=  4687.193	t=     41.3 R=   2e+06
+Depth= 9597102 States=  6.5e+07 Transitions= 8.95e+07 Memory=  4725.376	t=       42 R=   2e+06
+Depth= 9637522 States=  6.6e+07 Transitions=  9.1e+07 Memory=  4763.560	t=     42.6 R=   2e+06
+Depth= 9687022 States=  6.7e+07 Transitions= 9.25e+07 Memory=  4801.841	t=     43.3 R=   2e+06
+Depth= 9732822 States=  6.8e+07 Transitions= 9.39e+07 Memory=  4840.025	t=       44 R=   2e+06
+Depth= 9773856 States=  6.9e+07 Transitions= 9.54e+07 Memory=  4878.208	t=     44.6 R=   2e+06
+Depth= 9815220 States=    7e+07 Transitions= 9.69e+07 Memory=  4916.392	t=     45.3 R=   2e+06
+Depth= 9898692 States=  7.1e+07 Transitions= 9.84e+07 Memory=  4954.673	t=       46 R=   2e+06
+Depth= 9967909 States=  7.2e+07 Transitions= 9.98e+07 Memory=  4992.954	t=     46.6 R=   2e+06
+Depth= 10042163 States=  7.3e+07 Transitions= 1.01e+08 Memory=  5031.138	t=     47.3 R=   2e+06
+Depth= 10104726 States=  7.4e+07 Transitions= 1.03e+08 Memory=  5069.419	t=       48 R=   2e+06
+Depth= 10134962 States=  7.5e+07 Transitions= 1.04e+08 Memory=  5107.603	t=     48.7 R=   2e+06
+Depth= 10196456 States=  7.6e+07 Transitions= 1.06e+08 Memory=  5145.786	t=     49.4 R=   2e+06
+Depth= 10227388 States=  7.7e+07 Transitions= 1.07e+08 Memory=  5183.970	t=     50.1 R=   2e+06
+Depth= 10227388 States=  7.8e+07 Transitions= 1.09e+08 Memory=  5222.153	t=     50.8 R=   2e+06
+Depth= 10227388 States=  7.9e+07 Transitions=  1.1e+08 Memory=  5260.337	t=     51.4 R=   2e+06
+Depth= 10227388 States=    8e+07 Transitions= 1.12e+08 Memory=  5298.423	t=     52.1 R=   2e+06
+Depth= 10227388 States=  8.1e+07 Transitions= 1.13e+08 Memory=  5336.607	t=     52.8 R=   2e+06
+Depth= 10229470 States=  8.2e+07 Transitions= 1.15e+08 Memory=  5374.790	t=     53.5 R=   2e+06
+Depth= 10245101 States=  8.3e+07 Transitions= 1.16e+08 Memory=  5412.974	t=     54.2 R=   2e+06
+Depth= 10256320 States=  8.4e+07 Transitions= 1.18e+08 Memory=  5451.060	t=     54.9 R=   2e+06
+Depth= 10259748 States=  8.5e+07 Transitions= 1.19e+08 Memory=  5489.243	t=     55.6 R=   2e+06
+Depth= 10265737 States=  8.6e+07 Transitions= 1.21e+08 Memory=  5527.427	t=     56.4 R=   2e+06
+Depth= 10265737 States=  8.7e+07 Transitions= 1.23e+08 Memory=  5565.611	t=     57.1 R=   2e+06
+Depth= 10265737 States=  8.8e+07 Transitions= 1.24e+08 Memory=  5603.696	t=     57.8 R=   2e+06
+Depth= 10265737 States=  8.9e+07 Transitions= 1.26e+08 Memory=  5641.880	t=     58.5 R=   2e+06
+Depth= 10272762 States=    9e+07 Transitions= 1.27e+08 Memory=  5680.064	t=     59.2 R=   2e+06
+Depth= 10288809 States=  9.1e+07 Transitions= 1.29e+08 Memory=  5718.150	t=       60 R=   2e+06
+Depth= 10288809 States=  9.2e+07 Transitions=  1.3e+08 Memory=  5756.333	t=     60.7 R=   2e+06
+Depth= 10288809 States=  9.3e+07 Transitions= 1.32e+08 Memory=  5794.517	t=     61.4 R=   2e+06
+Depth= 10288809 States=  9.4e+07 Transitions= 1.33e+08 Memory=  5832.700	t=     62.2 R=   2e+06
+Depth= 10288809 States=  9.5e+07 Transitions= 1.35e+08 Memory=  5870.786	t=     62.9 R=   2e+06
+Depth= 10289027 States=  9.6e+07 Transitions= 1.36e+08 Memory=  5908.970	t=     63.7 R=   2e+06
+Depth= 10295969 States=  9.7e+07 Transitions= 1.38e+08 Memory=  5947.056	t=     64.4 R=   2e+06
+Depth= 10304159 States=  9.8e+07 Transitions= 1.39e+08 Memory=  5985.239	t=     65.2 R=   2e+06
+Depth= 10308650 States=  9.9e+07 Transitions= 1.41e+08 Memory=  6023.423	t=     65.9 R=   2e+06
+Depth= 10308650 States=    1e+08 Transitions= 1.42e+08 Memory=  6061.509	t=     66.7 R=   2e+06
+Depth= 10308650 States= 1.01e+08 Transitions= 1.44e+08 Memory=  6099.693	t=     67.4 R=   1e+06
+Depth= 10310214 States= 1.02e+08 Transitions= 1.45e+08 Memory=  6137.876	t=     68.2 R=   1e+06
+Depth= 10310214 States= 1.03e+08 Transitions= 1.47e+08 Memory=  6175.962	t=       69 R=   1e+06
+Depth= 10310214 States= 1.04e+08 Transitions= 1.48e+08 Memory=  6214.146	t=     69.7 R=   1e+06
+Depth= 10310214 States= 1.05e+08 Transitions=  1.5e+08 Memory=  6252.329	t=     70.5 R=   1e+06
+Depth= 10310214 States= 1.06e+08 Transitions= 1.51e+08 Memory=  6290.415	t=     71.2 R=   1e+06
+Depth= 10310214 States= 1.07e+08 Transitions= 1.53e+08 Memory=  6328.599	t=       72 R=   1e+06
+Depth= 10310214 States= 1.08e+08 Transitions= 1.54e+08 Memory=  6366.782	t=     72.7 R=   1e+06
+Depth= 10310214 States= 1.09e+08 Transitions= 1.56e+08 Memory=  6404.966	t=     73.5 R=   1e+06
+Depth= 10310214 States=  1.1e+08 Transitions= 1.57e+08 Memory=  6443.052	t=     74.3 R=   1e+06
+Depth= 10310214 States= 1.11e+08 Transitions= 1.59e+08 Memory=  6481.236	t=     75.1 R=   1e+06
+Depth= 10310214 States= 1.12e+08 Transitions= 1.61e+08 Memory=  6519.419	t=     75.8 R=   1e+06
+Depth= 10310214 States= 1.13e+08 Transitions= 1.62e+08 Memory=  6557.505	t=     76.6 R=   1e+06
+Depth= 10310214 States= 1.14e+08 Transitions= 1.64e+08 Memory=  6595.689	t=     77.4 R=   1e+06
+Depth= 10310214 States= 1.15e+08 Transitions= 1.65e+08 Memory=  6633.872	t=     78.1 R=   1e+06
+Depth= 10310214 States= 1.16e+08 Transitions= 1.67e+08 Memory=  6671.958	t=     78.9 R=   1e+06
+Depth= 10310214 States= 1.17e+08 Transitions= 1.68e+08 Memory=  6710.142	t=     79.7 R=   1e+06
+Depth= 10310214 States= 1.18e+08 Transitions=  1.7e+08 Memory=  6748.325	t=     80.5 R=   1e+06
+Depth= 10310214 States= 1.19e+08 Transitions= 1.71e+08 Memory=  6786.411	t=     81.3 R=   1e+06
+Depth= 10310214 States=  1.2e+08 Transitions= 1.73e+08 Memory=  6824.595	t=     82.1 R=   1e+06
+Depth= 10310214 States= 1.21e+08 Transitions= 1.74e+08 Memory=  6862.778	t=     82.9 R=   1e+06
+Depth= 10310214 States= 1.22e+08 Transitions= 1.76e+08 Memory=  6900.864	t=     83.7 R=   1e+06
+Depth= 10310214 States= 1.23e+08 Transitions= 1.77e+08 Memory=  6939.048	t=     84.5 R=   1e+06
+Depth= 10310214 States= 1.24e+08 Transitions= 1.79e+08 Memory=  6977.232	t=     85.2 R=   1e+06
+Depth= 10310214 States= 1.25e+08 Transitions=  1.8e+08 Memory=  7015.318	t=       86 R=   1e+06
+Depth= 10310214 States= 1.26e+08 Transitions= 1.82e+08 Memory=  7053.501	t=     86.8 R=   1e+06
+Depth= 10310214 States= 1.27e+08 Transitions= 1.83e+08 Memory=  7091.685	t=     87.6 R=   1e+06
+Depth= 10310214 States= 1.28e+08 Transitions= 1.85e+08 Memory=  7129.868	t=     88.4 R=   1e+06
+Depth= 10310214 States= 1.29e+08 Transitions= 1.86e+08 Memory=  7168.150	t=     89.2 R=   1e+06
+Depth= 10310214 States=  1.3e+08 Transitions= 1.88e+08 Memory=  7206.431	t=       90 R=   1e+06
+Depth= 10310214 States= 1.31e+08 Transitions= 1.89e+08 Memory=  7244.712	t=     90.8 R=   1e+06
+Depth= 10310214 States= 1.32e+08 Transitions=  1.9e+08 Memory=  7282.896	t=     91.7 R=   1e+06
+Depth= 10310214 States= 1.33e+08 Transitions= 1.92e+08 Memory=  7321.079	t=     92.5 R=   1e+06
+Depth= 10310214 States= 1.34e+08 Transitions= 1.93e+08 Memory=  7359.263	t=     93.3 R=   1e+06
+Depth= 10310214 States= 1.35e+08 Transitions= 1.95e+08 Memory=  7397.349	t=     94.2 R=   1e+06
+pan: resizing hashtable to -w28..  done
+Depth= 10310214 States= 1.36e+08 Transitions= 1.96e+08 Memory=  9445.349	t=      115 R=   1e+06
+Depth= 10310214 States= 1.37e+08 Transitions= 1.98e+08 Memory=  9457.751	t=      115 R=   1e+06
+Depth= 10310214 States= 1.38e+08 Transitions=    2e+08 Memory=  9495.935	t=      116 R=   1e+06
+Depth= 10310214 States= 1.39e+08 Transitions= 2.01e+08 Memory=  9534.216	t=      117 R=   1e+06
+Depth= 10310214 States=  1.4e+08 Transitions= 2.02e+08 Memory=  9572.595	t=      118 R=   1e+06
+Depth= 10310214 States= 1.41e+08 Transitions= 2.04e+08 Memory=  9610.778	t=      118 R=   1e+06
+Depth= 10310214 States= 1.42e+08 Transitions= 2.05e+08 Memory=  9648.864	t=      119 R=   1e+06
+Depth= 10310214 States= 1.43e+08 Transitions= 2.07e+08 Memory=  9687.048	t=      120 R=   1e+06
+Depth= 10310214 States= 1.44e+08 Transitions= 2.09e+08 Memory=  9725.232	t=      120 R=   1e+06
+Depth= 10310214 States= 1.45e+08 Transitions=  2.1e+08 Memory=  9763.318	t=      121 R=   1e+06
+Depth= 10310214 States= 1.46e+08 Transitions= 2.12e+08 Memory=  9801.501	t=      122 R=   1e+06
+Depth= 10310214 States= 1.47e+08 Transitions= 2.13e+08 Memory=  9839.685	t=      122 R=   1e+06
+Depth= 10310214 States= 1.48e+08 Transitions= 2.15e+08 Memory=  9877.771	t=      123 R=   1e+06
+Depth= 10310214 States= 1.49e+08 Transitions= 2.16e+08 Memory=  9915.954	t=      124 R=   1e+06
+Depth= 10310214 States=  1.5e+08 Transitions= 2.18e+08 Memory=  9954.138	t=      124 R=   1e+06
+Depth= 10310214 States= 1.51e+08 Transitions= 2.19e+08 Memory=  9992.321	t=      125 R=   1e+06
+Depth= 10310214 States= 1.52e+08 Transitions=  2.2e+08 Memory= 10030.505	t=      126 R=   1e+06
+Depth= 10310214 States= 1.53e+08 Transitions= 2.22e+08 Memory= 10068.689	t=      126 R=   1e+06
+Depth= 10310214 States= 1.54e+08 Transitions= 2.23e+08 Memory= 10106.872	t=      127 R=   1e+06
+Depth= 10310214 States= 1.55e+08 Transitions= 2.25e+08 Memory= 10145.056	t=      128 R=   1e+06
+Depth= 10310214 States= 1.56e+08 Transitions= 2.26e+08 Memory= 10183.239	t=      128 R=   1e+06
+Depth= 10310214 States= 1.57e+08 Transitions= 2.27e+08 Memory= 10221.325	t=      129 R=   1e+06
+Depth= 10310214 States= 1.58e+08 Transitions= 2.29e+08 Memory= 10259.607	t=      130 R=   1e+06
+Depth= 10310214 States= 1.59e+08 Transitions=  2.3e+08 Memory= 10297.888	t=      130 R=   1e+06
+Depth= 10310214 States=  1.6e+08 Transitions= 2.32e+08 Memory= 10336.071	t=      131 R=   1e+06
+Depth= 10310214 States= 1.61e+08 Transitions= 2.33e+08 Memory= 10374.255	t=      132 R=   1e+06
+Depth= 10310214 States= 1.62e+08 Transitions= 2.34e+08 Memory= 10412.439	t=      132 R=   1e+06
+Depth= 10310214 States= 1.63e+08 Transitions= 2.36e+08 Memory= 10450.622	t=      133 R=   1e+06
+Depth= 10310214 States= 1.64e+08 Transitions= 2.37e+08 Memory= 10488.903	t=      134 R=   1e+06
+Depth= 10310214 States= 1.65e+08 Transitions= 2.38e+08 Memory= 10527.087	t=      134 R=   1e+06
+Depth= 10310214 States= 1.66e+08 Transitions=  2.4e+08 Memory= 10565.271	t=      135 R=   1e+06
+Depth= 10310214 States= 1.67e+08 Transitions= 2.41e+08 Memory= 10603.454	t=      136 R=   1e+06
+Depth= 10310214 States= 1.68e+08 Transitions= 2.42e+08 Memory= 10641.736	t=      136 R=   1e+06
+Depth= 10310214 States= 1.69e+08 Transitions= 2.44e+08 Memory= 10679.919	t=      137 R=   1e+06
+Depth= 10310214 States=  1.7e+08 Transitions= 2.45e+08 Memory= 10718.200	t=      138 R=   1e+06
+Depth= 10310214 States= 1.71e+08 Transitions= 2.46e+08 Memory= 10756.384	t=      138 R=   1e+06
+Depth= 10310214 States= 1.72e+08 Transitions= 2.48e+08 Memory= 10794.665	t=      139 R=   1e+06
+Depth= 10310214 States= 1.73e+08 Transitions= 2.49e+08 Memory= 10832.849	t=      140 R=   1e+06
+Depth= 10310214 States= 1.74e+08 Transitions=  2.5e+08 Memory= 10871.032	t=      140 R=   1e+06
+Depth= 10310214 States= 1.75e+08 Transitions= 2.52e+08 Memory= 10909.411	t=      141 R=   1e+06
+Depth= 10310214 States= 1.76e+08 Transitions= 2.53e+08 Memory= 10947.595	t=      142 R=   1e+06
+Depth= 10310214 States= 1.77e+08 Transitions= 2.54e+08 Memory= 10985.778	t=      142 R=   1e+06
+Depth= 10310214 States= 1.78e+08 Transitions= 2.56e+08 Memory= 11024.157	t=      143 R=   1e+06
+Depth= 10310214 States= 1.79e+08 Transitions= 2.57e+08 Memory= 11062.341	t=      144 R=   1e+06
+Depth= 10310214 States=  1.8e+08 Transitions= 2.58e+08 Memory= 11100.525	t=      144 R=   1e+06
+Depth= 10310214 States= 1.81e+08 Transitions= 2.59e+08 Memory= 11138.806	t=      145 R=   1e+06
+Depth= 10310214 States= 1.82e+08 Transitions= 2.61e+08 Memory= 11176.989	t=      146 R=   1e+06
+Depth= 10310214 States= 1.83e+08 Transitions= 2.62e+08 Memory= 11215.368	t=      146 R=   1e+06
+Depth= 10310214 States= 1.84e+08 Transitions= 2.63e+08 Memory= 11253.747	t=      147 R=   1e+06
+Depth= 10310214 States= 1.85e+08 Transitions= 2.65e+08 Memory= 11291.931	t=      148 R=   1e+06
+Depth= 10310214 States= 1.86e+08 Transitions= 2.66e+08 Memory= 11330.114	t=      148 R=   1e+06
+Depth= 10310214 States= 1.87e+08 Transitions= 2.68e+08 Memory= 11368.298	t=      149 R=   1e+06
+Depth= 10310214 States= 1.88e+08 Transitions=  2.7e+08 Memory= 11406.482	t=      150 R=   1e+06
+Depth= 10310214 States= 1.89e+08 Transitions= 2.72e+08 Memory= 11444.665	t=      151 R=   1e+06
+Depth= 10310214 States=  1.9e+08 Transitions= 2.73e+08 Memory= 11483.142	t=      152 R=   1e+06
+Depth= 10310214 States= 1.91e+08 Transitions= 2.74e+08 Memory= 11521.325	t=      153 R=   1e+06
+Depth= 10310214 States= 1.92e+08 Transitions= 2.76e+08 Memory= 11559.509	t=      153 R=   1e+06
+Depth= 10310214 States= 1.93e+08 Transitions= 2.77e+08 Memory= 11597.790	t=      154 R=   1e+06
+Depth= 10310214 States= 1.94e+08 Transitions= 2.79e+08 Memory= 11636.071	t=      155 R=   1e+06
+Depth= 10310214 States= 1.95e+08 Transitions=  2.8e+08 Memory= 11674.353	t=      155 R=   1e+06
+Depth= 10310214 States= 1.96e+08 Transitions= 2.81e+08 Memory= 11712.536	t=      156 R=   1e+06
+Depth= 10310214 States= 1.97e+08 Transitions= 2.83e+08 Memory= 11750.818	t=      157 R=   1e+06
+Depth= 10310214 States= 1.98e+08 Transitions= 2.84e+08 Memory= 11789.099	t=      158 R=   1e+06
+Depth= 10310214 States= 1.99e+08 Transitions= 2.86e+08 Memory= 11827.282	t=      158 R=   1e+06
+Depth= 10310214 States=    2e+08 Transitions= 2.87e+08 Memory= 11865.564	t=      159 R=   1e+06
+Depth= 10310214 States= 2.01e+08 Transitions= 2.88e+08 Memory= 11903.747	t=      160 R=   1e+06
+Depth= 10310214 States= 2.02e+08 Transitions=  2.9e+08 Memory= 11941.931	t=      161 R=   1e+06
+Depth= 10310214 States= 2.03e+08 Transitions= 2.91e+08 Memory= 11980.114	t=      161 R=   1e+06
+Depth= 10310214 States= 2.04e+08 Transitions= 2.93e+08 Memory= 12018.298	t=      162 R=   1e+06
+Depth= 10310214 States= 2.05e+08 Transitions= 2.95e+08 Memory= 12056.482	t=      163 R=   1e+06
+Depth= 10310214 States= 2.06e+08 Transitions= 2.96e+08 Memory= 12094.763	t=      164 R=   1e+06
+Depth= 10310214 States= 2.07e+08 Transitions= 2.98e+08 Memory= 12132.946	t=      164 R=   1e+06
+Depth= 10310214 States= 2.08e+08 Transitions= 2.99e+08 Memory= 12171.130	t=      165 R=   1e+06
+Depth= 10310214 States= 2.09e+08 Transitions=    3e+08 Memory= 12209.314	t=      166 R=   1e+06
+Depth= 10310214 States=  2.1e+08 Transitions= 3.02e+08 Memory= 12247.497	t=      167 R=   1e+06
+Depth= 10310214 States= 2.11e+08 Transitions= 3.04e+08 Memory= 12285.681	t=      167 R=   1e+06
+Depth= 10310214 States= 2.12e+08 Transitions= 3.05e+08 Memory= 12324.060	t=      168 R=   1e+06
+Depth= 10310214 States= 2.13e+08 Transitions= 3.07e+08 Memory= 12362.341	t=      169 R=   1e+06
+Depth= 10310214 States= 2.14e+08 Transitions= 3.08e+08 Memory= 12400.427	t=      170 R=   1e+06
+Depth= 10310214 States= 2.15e+08 Transitions=  3.1e+08 Memory= 12438.708	t=      170 R=   1e+06
+Depth= 10310214 States= 2.16e+08 Transitions= 3.11e+08 Memory= 12476.989	t=      171 R=   1e+06
+Depth= 10310214 States= 2.17e+08 Transitions= 3.12e+08 Memory= 12515.075	t=      172 R=   1e+06
+Depth= 10310214 States= 2.18e+08 Transitions= 3.14e+08 Memory= 12553.357	t=      173 R=   1e+06
+Depth= 10310214 States= 2.19e+08 Transitions= 3.15e+08 Memory= 12591.540	t=      174 R=   1e+06
+Depth= 10310214 States=  2.2e+08 Transitions= 3.17e+08 Memory= 12629.821	t=      174 R=   1e+06
+Depth= 10310214 States= 2.21e+08 Transitions= 3.19e+08 Memory= 12668.005	t=      175 R=   1e+06
+Depth= 10310214 States= 2.22e+08 Transitions=  3.2e+08 Memory= 12706.091	t=      176 R=   1e+06
+Depth= 10310214 States= 2.23e+08 Transitions= 3.22e+08 Memory= 12744.372	t=      177 R=   1e+06
+Depth= 10310214 States= 2.24e+08 Transitions= 3.23e+08 Memory= 12782.556	t=      177 R=   1e+06
+Depth= 10310214 States= 2.25e+08 Transitions= 3.25e+08 Memory= 12820.739	t=      178 R=   1e+06
+Depth= 10310214 States= 2.26e+08 Transitions= 3.26e+08 Memory= 12859.021	t=      179 R=   1e+06
+Depth= 10310214 States= 2.27e+08 Transitions= 3.28e+08 Memory= 12897.302	t=      180 R=   1e+06
+Depth= 10310214 States= 2.28e+08 Transitions= 3.29e+08 Memory= 12935.486	t=      181 R=   1e+06
+Depth= 10310214 States= 2.29e+08 Transitions= 3.31e+08 Memory= 12973.571	t=      181 R=   1e+06
+Depth= 10310214 States=  2.3e+08 Transitions= 3.32e+08 Memory= 13011.755	t=      182 R=   1e+06
+Depth= 10310214 States= 2.31e+08 Transitions= 3.34e+08 Memory= 13050.134	t=      183 R=   1e+06
+Depth= 10310214 States= 2.32e+08 Transitions= 3.35e+08 Memory= 13088.318	t=      184 R=   1e+06
+Depth= 10310214 States= 2.33e+08 Transitions= 3.37e+08 Memory= 13126.501	t=      185 R=   1e+06
+Depth= 10310214 States= 2.34e+08 Transitions= 3.38e+08 Memory= 13164.587	t=      186 R=   1e+06
+
+(Spin Version 6.5.0 -- 17 July 2019)
+	+ Partial Order Reduction
+	+ Compression
+
+Full statespace search for:
+	never claim         	- (not selected)
+	assertion violations	+
+	cycle checks       	- (disabled by -DSAFETY)
+	invalid end states	+
+
+State-vector 60 byte, depth reached 10310214, errors: 0
+2.3407758e+08 states, stored
+1.0440331e+08 states, matched
+3.3848088e+08 transitions (= stored+matched)
+        1 atomic steps
+hash conflicts: 1.160083e+08 (resolved)
+
+Stats on memory usage (in Megabytes):
+19644.572	equivalent memory usage for states (stored*(State-vector + overhead))
+ 9518.035	actual memory usage for states (compression: 48.45%)
+         	state-vector as stored = 15 byte + 28 byte overhead
+ 2048.000	memory used for hash table (-w28)
+ 1602.173	memory used for DFS stack (-m30000000)
+13167.517	total actual memory usage
+
+
+nr of templates: [ 0:globals 1:chans 2:procs ]
+collapse counts: [ 0:259763 2:7366 3:2 ]
+unreached in proctype cpu
+	MESI.pml:86, state 18, "printf('FLUSHING')"
+	MESI.pml:88, state 20, "req_msg.address = caches[id].lines[(req.address&(1-1))].tag"
+	MESI.pml:107, state 46, "req_msg.type = 0"
+	MESI.pml:108, state 48, "req_msg.type = 0"
+	MESI.pml:107, state 114, "req_msg.type = 0"
+	MESI.pml:107, state 177, "req_msg.type = 0"
+	MESI.pml:86, state 222, "printf('FLUSHING')"
+	MESI.pml:88, state 224, "req_msg.address = caches[id].lines[(req.address&(1-1))].tag"
+	MESI.pml:108, state 252, "req_msg.type = 0"
+	MESI.pml:107, state 315, "req_msg.type = 0"
+	MESI.pml:108, state 317, "req_msg.type = 0"
+	MESI.pml:262, state 330, "-end-"
+	(12 of 330 states)
+unreached in init
+	(0 of 4 states)
+unreached in claim single_modified
+	_spin_nvr.tmp:3, state 6, "(!(((caches[0].lines[0].tag!=caches[1].lines[0].tag)||((!((caches[0].lines[0].state==3))||(caches[1].lines[0].state==0))&&(!((caches[1].lines[0].state==3))||(caches[0].lines[0].state==0))))))"
+	_spin_nvr.tmp:3, state 6, "(1)"
+	_spin_nvr.tmp:8, state 10, "-end-"
+	(2 of 10 states)
+unreached in claim single_exclusive
+	_spin_nvr.tmp:12, state 6, "(!(((caches[0].lines[0].tag!=caches[1].lines[0].tag)||((!((caches[0].lines[0].state==2))||(caches[1].lines[0].state==0))&&(!((caches[1].lines[0].state==2))||(caches[0].lines[0].state==0))))))"
+	_spin_nvr.tmp:12, state 6, "(1)"
+	_spin_nvr.tmp:17, state 10, "-end-"
+	(2 of 10 states)
+unreached in claim sh_ex_mem_value
+	_spin_nvr.tmp:21, state 6, "(!(((!(((caches[0].lines[0].state==1)||(caches[0].lines[0].state==2)))||(caches[0].lines[0].data==mem[caches[0].lines[0].tag]))&&(!(((caches[1].lines[0].state==1)||(caches[1].lines[0].state==2)))||(caches[1].lines[0].data==mem[caches[1].lines[0].tag])))))"
+	_spin_nvr.tmp:21, state 6, "(1)"
+	_spin_nvr.tmp:26, state 10, "-end-"
+	(2 of 10 states)
+
+pan: elapsed time 186 seconds
+pan: rate 1261261.8 states/second
